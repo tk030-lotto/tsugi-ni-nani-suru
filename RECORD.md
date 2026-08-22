@@ -30,3 +30,9 @@
 - noteおよびX（Twitter）のプレビューに最適な 16:9（960x540）比率のループGIFアニメーション（`demo.gif`, 0.89MB）を生成
 - 起動 → 入力 → クイックチップ → 質問文生成 → クイック調整 → コピートーストの一連のUXフローを収録
 - プロジェクト直下および各種情報フォルダに保存完了
+
+## 2026-08-22 GitHub Pages 公開準備
+- GitHub Actions ワークフロー `.github/workflows/deploy-pages.yml` を新規作成（`main` ブランチプッシュ時の自動デプロイ定義）
+- `README.md` に GitHub Pages 公開予定URLおよび利用案内を追記
+- 各種情報フォルダおよびリポジトリへ反映完了
+
