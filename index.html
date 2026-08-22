@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="AI開発中の「今どこまで進んだか」「次に何をすればいいか」を整理し、AIへ投げる最適な質問文（プロンプト）を生成するWebツール">
+  <title>次に何する？ | AI開発ナビゲーター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-badge">AI Development Navigator</div>
+      <h1 class="app-title">次に何する？</h1>
+      <p class="app-subtitle">AI開発ナビゲーター</p>
+    </header>
+
+    <!-- ビュー1: 起動・導入画面 -->
+    <section id="view-intro" class="view-section active">
+      <div class="intro-card">
+        <div class="intro-icon">🧭</div>
+        <p class="intro-lead">
+          作っているけど、次に何をすればいい？<br>
+          AIと一緒に次の一歩を考えてみましょう。
+        </p>
+        <div class="intro-description">
+          <p>開発途中で迷ったり、久しぶりに再開した時でも大丈夫。<br>
+          今の状況を入力するだけで、AIに「次に行うべき作業」を整理してもらうための最適な質問文を作成します。</p>
+        </div>
+        <button id="btn-start" class="btn btn-primary btn-large">
+          <span>始める</span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ビュー2: 開発状況入力画面 -->
+    <section id="view-input" class="view-section">
+      <form id="navigator-form" class="form-container" onsubmit="return false;">
+        
+        <!-- メイン入力 -->
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="current-status" class="form-label">
+              <span class="label-number">1</span>
+              今どこまでできていますか？ <span class="badge-required">必須</span>
+            </label>
+          </div>
+          <p class="form-hint">思いつくまま自由に入力してください。短くても構いません。</p>
+          <textarea 
+            id="current-status" 
+            class="form-textarea" 
+            rows="4" 
+            placeholder="例：画面はできた。ボタンも動く。データ保存はまだ。&#10;例：エラーは直った。次に何を確認すればいいか分からない。&#10;例：READMEはできたけど、開発を始めたばかり。" 
+            required></textarea>
+
+          <!-- クイック入力チップ -->
+          <div class="quick-chips-wrapper">
+            <span class="chips-title">よくある状況（タップで追加）：</span>
+            <div class="chips-container">
+              <button type="button" class="chip-btn" data-chip="画面・UIはできた">📱 画面はできた</button>
+              <button type="button" class="chip-btn" data-chip="基本機能は動いている">⚙️ 基本機能は動いた</button>
+              <button type="button" class="chip-btn" data-chip="データ保存・読み込みはまだ">💾 データ保存はまだ</button>
+              <button type="button" class="chip-btn" data-chip="エラーは直った">✅ エラーは直った</button>
+              <button type="button" class="chip-btn" data-chip="README・仕様書は完成した">📝 READMEは完成</button>
+              <button type="button" class="chip-btn" data-chip="途中で止まっていて何をしたか分からない">❓ 途中で止まった</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- アコーディオン（追加情報：任意） -->
+        <div class="accordion-wrapper">
+          <button type="button" id="accordion-toggle" class="accordion-header" aria-expanded="false">
+            <span class="accordion-title">
+              <span class="label-number">2</span>
+              追加情報（任意・分かれば入力）
+            </span>
+            <span class="accordion-icon">▼</span>
+          </button>
+          
+          <div id="accordion-content" class="accordion-body">
+            <div class="form-group-sub">
+              <label for="input-goal" class="sub-label">作りたいもの・目指すゴール</label>
+              <input type="text" id="input-goal" class="form-input" placeholder="例：メモをローカル保存できるシンプルなToDoアプリ">
+            </div>
+
+            <div class="form-group-sub">
+              <label for="input-last-action" class="sub-label">直前に行った作業</label>
+              <input type="text" id="input-last-action" class="form-input" placeholder="例：保存ボタンを押した時のイベントハンドラを追加した">
+            </div>
+
+            <div class="form-group-sub">
+              <label for="input-trouble" class="sub-label">現在困っていること・エラー内容</label>
+              <input type="text" id="input-trouble" class="form-input" placeholder="例：エラーは出ていないが、次に何をテストすべきか分からない">
+            </div>
+
+            <div class="form-group-sub">
+              <label for="input-remaining" class="sub-label">残っていると思う作業</label>
+              <input type="text" id="input-remaining" class="form-input" placeholder="例：デザインの調整、スマホでの動作確認">
+            </div>
+          </div>
+        </div>
+
+        <!-- 送信ボタン -->
+        <div class="form-actions">
+          <button type="button" id="btn-generate" class="btn btn-primary btn-large">
+            <span>AIへの質問文を作る</span>
+            <svg class="btn-sparkle" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ビュー3: 生成結果・アクション画面 -->
+    <section id="view-result" class="view-section">
+      <div class="result-container">
+        <div class="result-header">
+          <div class="result-title-badge">生成された質問文</div>
+          <p class="result-hint">このままコピーして、普段使っているAI（ChatGPT/Claude/Gemini/Cursor等）に送信してください。</p>
+        </div>
+
+        <!-- 質問文カード -->
+        <div class="prompt-card">
+          <div class="prompt-card-header">
+            <span class="prompt-type">PROMPT FOR AI</span>
+            <button type="button" id="btn-copy" class="btn-copy-header">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>コピー</span>
+            </button>
+          </div>
+          <pre id="prompt-output" class="prompt-content"></pre>
+        </div>
+
+        <!-- メインアクション：コピーボタン -->
+        <div class="result-actions">
+          <button type="button" id="btn-copy-main" class="btn btn-copy-main btn-large">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>質問文をクリップボードにコピー</span>
+          </button>
+        </div>
+
+        <!-- クイック調整オプション -->
+        <div class="refine-section">
+          <div class="refine-title">⚡ 質問のトーン・方針を調整する：</div>
+          <div class="refine-chips">
+            <button type="button" class="refine-btn" data-refine="next-one">🎯 次の1個だけに絞って</button>
+            <button type="button" class="refine-btn" data-refine="simple">🐣 もっと簡単な作業から</button>
+            <button type="button" class="refine-btn" data-refine="verify-only">🔍 まず動作確認だけしたい</button>
+            <button type="button" class="refine-btn" data-refine="postpone">⏳ 複雑な機能は後回し</button>
+            <button type="button" class="refine-btn" data-refine="overview">📋 全体のロードマップも知りたい</button>
+          </div>
+        </div>
+
+        <!-- ナビゲーション操作 -->
+        <div class="sub-actions">
+          <button type="button" id="btn-edit" class="btn btn-secondary">
+            <span>✏️ 入力内容を修正する</span>
+          </button>
+          <button type="button" id="btn-reset" class="btn btn-ghost">
+            <span>🔄 新しく入力する</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="app-footer">
+      <p>「次に何する？」— 迷ったら、まず次の1個から。</p>
+      <p class="copyright">MIT License</p>
+    </footer>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="toast" role="alert" aria-live="assertive">
+    <div class="toast-content">
+      <span class="toast-icon">✓</span>
+      <span id="toast-message" class="toast-text">クリップボードにコピーしました</span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
