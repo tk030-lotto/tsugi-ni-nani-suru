@@ -2,9 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AI開発中の「今どこまで進んだか」「次に何をすればいいか」を整理し、AIへ投げる最適な質問文（プロンプト）を生成するWebツール">
   <title>次に何する？ | AI開発ナビゲーター</title>
+  <!-- Favicon (Compass Emoji SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -46,7 +48,7 @@
       <form id="navigator-form" class="form-container" onsubmit="return false;">
         
         <!-- メイン入力 -->
-        <div class="form-group">
+        <div class="form-group" id="group-current-status">
           <div class="form-label-row">
             <label for="current-status" class="form-label">
               <span class="label-number">1</span>
@@ -131,7 +133,10 @@
         <!-- 質問文カード -->
         <div class="prompt-card">
           <div class="prompt-card-header">
-            <span class="prompt-type">PROMPT FOR AI</span>
+            <div class="prompt-header-left">
+              <span class="prompt-type">PROMPT FOR AI</span>
+              <span class="prompt-editable-badge">✏️ 直接編集可能</span>
+            </div>
             <button type="button" id="btn-copy" class="btn-copy-header">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -140,7 +145,7 @@
               <span>コピー</span>
             </button>
           </div>
-          <pre id="prompt-output" class="prompt-content"></pre>
+          <pre id="prompt-output" class="prompt-content" contenteditable="true" spellcheck="false" title="クリックして直接テキストを編集できます"></pre>
         </div>
 
         <!-- メインアクション：コピーボタン -->
@@ -169,7 +174,7 @@
         <!-- ナビゲーション操作 -->
         <div class="sub-actions">
           <button type="button" id="btn-edit" class="btn btn-secondary">
-            <span>✏️ 入力内容を修正する</span>
+            <span>✏️ 条件入力に戻る</span>
           </button>
           <button type="button" id="btn-reset" class="btn btn-ghost">
             <span>🔄 新しく入力する</span>

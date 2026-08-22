@@ -4,6 +4,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  const STORAGE_KEY = 'tsugi_ni_nani_suru_draft_v1';
+
   // --- DOM Elements ---
   const views = {
     intro: document.getElementById('view-intro'),
@@ -23,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const chipButtons = document.querySelectorAll('.chip-btn');
   const refineButtons = document.querySelectorAll('.refine-btn');
 
-  // Input Fields
+  // Input Fields & Groups
+  const groupStatus = document.getElementById('group-current-status');
   const inputStatus = document.getElementById('current-status');
   const inputGoal = document.getElementById('input-goal');
   const inputLastAction = document.getElementById('input-last-action');
@@ -38,6 +41,66 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let activeRefineType = null;
   let toastTimer = null;
+
+  // --- LocalStorage Draft Persistence ---
+  function saveDraft() {
+    try {
+      const data = {
+        status: inputStatus.value,
+        goal: inputGoal.value,
+        lastAction: inputLastAction.value,
+        trouble: inputTrouble.value,
+        remaining: inputRemaining.value,
+        isAccordionOpen: accordionContent ? accordionContent.classList.contains('open') : false
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.status) inputStatus.value = data.status;
+      if (data.goal) inputGoal.value = data.goal;
+      if (data.lastAction) inputLastAction.value = data.lastAction;
+      if (data.trouble) inputTrouble.value = data.trouble;
+      if (data.remaining) inputRemaining.value = data.remaining;
+      
+      if (data.isAccordionOpen && accordionToggle && accordionContent) {
+        accordionToggle.setAttribute('aria-expanded', 'true');
+        accordionContent.classList.add('open');
+      }
+    } catch (e) {
+      console.warn('LocalStorage load failed:', e);
+    }
+  }
+
+  function clearDraft() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn('LocalStorage clear failed:', e);
+    }
+  }
+
+  // Attach auto-save listeners
+  [inputStatus, inputGoal, inputLastAction, inputTrouble, inputRemaining].forEach((el) => {
+    if (el) {
+      el.addEventListener('input', () => {
+        saveDraft();
+        if (el === inputStatus && groupStatus) {
+          groupStatus.classList.remove('has-error');
+        }
+      });
+    }
+  });
+
+  // Load existing draft on init
+  loadDraft();
 
   // --- View Navigation ---
   function switchView(viewName) {
@@ -57,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isExpanded = accordionToggle.getAttribute('aria-expanded') === 'true';
       accordionToggle.setAttribute('aria-expanded', !isExpanded);
       accordionContent.classList.toggle('open', !isExpanded);
+      saveDraft();
     });
   }
 
@@ -70,13 +134,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!currentVal) {
         inputStatus.value = chipText;
       } else {
-        // 既にテキストがある場合は読点か改行で追加
         if (currentVal.endsWith('。') || currentVal.endsWith('\n')) {
           inputStatus.value = currentVal + chipText;
         } else {
           inputStatus.value = currentVal + '、' + chipText;
         }
       }
+      if (groupStatus) groupStatus.classList.remove('has-error');
+      saveDraft();
       inputStatus.focus();
     });
   });
@@ -90,7 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const remaining = inputRemaining.value.trim();
 
     if (!status) {
-      alert('「今どこまでできていますか？」を入力してください。');
+      if (groupStatus) {
+        groupStatus.classList.add('has-error');
+      }
+      showToast('「今どこまでできていますか？」を入力してください。', true);
       inputStatus.focus();
       return null;
     }
@@ -158,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback for older browsers
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -172,14 +239,20 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('質問文をクリップボードにコピーしました！');
     } catch (err) {
       console.error('Clipboard copy failed:', err);
-      showToast('コピーに失敗しました。直接選択してコピーしてください。');
+      showToast('コピーに失敗しました。直接選択してコピーしてください。', true);
     }
   }
 
   // --- Toast Notification ---
-  function showToast(msg) {
+  function showToast(msg, isError = false) {
     if (!toast) return;
     if (toastMessage) toastMessage.textContent = msg;
+
+    if (isError) {
+      toast.classList.add('toast-error');
+    } else {
+      toast.classList.remove('toast-error');
+    }
 
     toast.classList.add('show');
     if (toastTimer) clearTimeout(toastTimer);
@@ -205,20 +278,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const promptText = buildPrompt();
       if (!promptText) return;
 
-      promptOutput.textContent = promptText;
+      promptOutput.innerText = promptText;
       switchView('result');
     });
   }
 
-  // 3. コピーボタン (ヘッダー & メイン)
+  // 3. コピーボタン (ヘッダー & メイン) - 直接編集されたテキストを取得
   if (btnCopyHeader) {
     btnCopyHeader.addEventListener('click', () => {
-      copyToClipboard(promptOutput.textContent);
+      const textToCopy = promptOutput.innerText || promptOutput.textContent;
+      copyToClipboard(textToCopy);
     });
   }
   if (btnCopyMain) {
     btnCopyMain.addEventListener('click', () => {
-      copyToClipboard(promptOutput.textContent);
+      const textToCopy = promptOutput.innerText || promptOutput.textContent;
+      copyToClipboard(textToCopy);
     });
   }
 
@@ -227,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const refineType = btn.dataset.refine;
       
-      // 同じボタンを再タップでトグル解除
       if (activeRefineType === refineType) {
         activeRefineType = null;
         btn.classList.remove('active');
@@ -237,10 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.classList.add('active');
       }
 
-      // プロンプト再生成
       const updatedPrompt = buildPrompt();
       if (updatedPrompt) {
-        promptOutput.textContent = updatedPrompt;
+        promptOutput.innerText = updatedPrompt;
         showToast('質問文を調整・更新しました');
       }
     });
@@ -256,19 +329,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. リセットボタン
   if (btnReset) {
     btnReset.addEventListener('click', () => {
-      if (confirm('入力内容をクリアして新しく作成しますか？')) {
-        inputStatus.value = '';
-        inputGoal.value = '';
-        inputLastAction.value = '';
-        inputTrouble.value = '';
-        inputRemaining.value = '';
-        activeRefineType = null;
-        refineButtons.forEach((b) => b.classList.remove('active'));
-        if (accordionContent) accordionContent.classList.remove('open');
-        if (accordionToggle) accordionToggle.setAttribute('aria-expanded', 'false');
-        switchView('input');
-        inputStatus.focus();
-      }
+      inputStatus.value = '';
+      inputGoal.value = '';
+      inputLastAction.value = '';
+      inputTrouble.value = '';
+      inputRemaining.value = '';
+      activeRefineType = null;
+      refineButtons.forEach((b) => b.classList.remove('active'));
+      if (accordionContent) accordionContent.classList.remove('open');
+      if (accordionToggle) accordionToggle.setAttribute('aria-expanded', 'false');
+      if (groupStatus) groupStatus.classList.remove('has-error');
+      clearDraft();
+      showToast('入力内容をリセットしました');
+      switchView('input');
+      inputStatus.focus();
     });
   }
 });
