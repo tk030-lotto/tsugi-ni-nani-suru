@@ -344,7 +344,7 @@ body {
   padding: 14px;
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.6;
   resize: vertical;
   min-height: 110px;
@@ -365,7 +365,7 @@ body {
   padding: 10px 14px;
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition: border-color var(--transition-fast);
 }
 
