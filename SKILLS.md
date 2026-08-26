@@ -8,12 +8,33 @@
 
 * **参照ファイル**: `knowledge/protocol.md`
 - **対象**: すべてのプロジェクト
-- **内容**: AIエージェントの基本行動規範（全18箇条）、マイクロコミット、リファクタリングの禁止、デザイン要件など。
+- **内容**: AIエージェントの基本行動規範（全22箇条）、事前承認義務、マイクロコミット、リファクタリング禁止、デザイン要件、MCPツール優先活用など。
 - **指示**: いかなる作業を開始する際も、各ドメイン知識と併せて必ずこのプロトコルを読み込み、厳格に順守すること。
+
+* **品質監査スキル (Project Quality Audit)**: `knowledge/quality-audit.md`
+- **対象**: すべてのプロジェクト（実装完了時、受入検査時、修正後の再監査時）
+- **内容**: 要件・仕様・実装・エラー・セキュリティ・境界値・UI/UXの9段階横断監査、仕様外機能分離、受入判定（PASS〜BLOCKED）。
+- **指示**: 実装完了時や機能修正時は、本スキルを適用（またはMCPの `run_project_quality_audit` / `v3.run_quality_audit` を実行）して品質を検証すること。
 
 ---
 
-## 2. ドメイン知識 (Domain Knowledge)
+## 2. 開発時 MCP ツールの優先活用方針 (MCP Priority Policy)
+
+AIエージェントは、手動でのファイル調査や一時スクリプト作成を最小化し、以下の **自作MCPツール群を最優先で呼び出して開発・監査・引き継ぎを行うこと**。
+
+1. **AI開発コンテキスト管理MCPツール** (`ai-context-manager-mcp`):
+   - `build_context_pack`: 開発モード別・トークン予算別の最適コンテキスト合成
+   - `check_context_integrity`: 4大設計文書の配置・健全性診断
+   - `run_project_quality_audit`: 横断的9段階品質監査・受入判定レポート生成
+   - `generate_handover` / `generate_ai_transfer`: チャット・モデル間引き継ぎサマリー自動生成
+   - `extract_git_diff`: 構造化Git差分抽出
+2. **AIコンテキスト管理ツールV3MCP** (`v3-mcp-server`):
+   - `v3.run_quality_audit`: 9段階品質監査・ガバナンス受入判定
+   - `v3.check_gate`: フェーズ移行・仕様確定ゲート判定
+   - `v3.run_pre_audit`: 開発前ルール遵守（事前承認・Zero-Dependency・300行制限）チェック
+   - `v3.check_drift`: コード・仕様乖離検知
+
+## 3. ドメイン知識 (Domain Knowledge)
 
 作業中のプロジェクトの性質に合わせて、以下のドメイン知識ファイル（`knowledge/` フォルダ内）を読み込み、専門スキルを適用してください。
 
