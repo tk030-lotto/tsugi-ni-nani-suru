@@ -45,7 +45,7 @@
 
     <!-- ビュー2: 開発状況入力画面 -->
     <section id="view-input" class="view-section">
-      <form id="navigator-form" class="form-container" onsubmit="return false;">
+      <form id="navigator-form" class="form-container">
         
         <!-- メイン入力 -->
         <div class="form-group" id="group-current-status">
@@ -79,7 +79,7 @@
 
         <!-- アコーディオン（追加情報：任意） -->
         <div class="accordion-wrapper">
-          <button type="button" id="accordion-toggle" class="accordion-header" aria-expanded="false">
+          <button type="button" id="accordion-toggle" class="accordion-header" aria-expanded="false" aria-controls="accordion-content">
             <span class="accordion-title">
               <span class="label-number">2</span>
               追加情報（任意・分かれば入力）
@@ -124,7 +124,7 @@
 
     <!-- ビュー3: 生成結果・アクション画面 -->
     <section id="view-result" class="view-section">
-      <div class="result-container">
+      <div class="result-container" id="result-container" tabindex="-1">
         <div class="result-header">
           <div class="result-title-badge">生成された質問文</div>
           <p class="result-hint">このままコピーして、普段使っているAI（ChatGPT/Claude/Gemini/Cursor等）に送信してください。</p>
@@ -145,7 +145,7 @@
               <span>コピー</span>
             </button>
           </div>
-          <pre id="prompt-output" class="prompt-content" contenteditable="true" spellcheck="false" title="クリックして直接テキストを編集できます"></pre>
+          <pre id="prompt-output" class="prompt-content" contenteditable="true" role="textbox" aria-multiline="true" aria-label="生成された質問文（編集可能）" spellcheck="false" title="クリックして直接テキストを編集できます"></pre>
         </div>
 
         <!-- メインアクション：コピーボタン -->
@@ -193,7 +193,7 @@
   <!-- トースト通知 -->
   <div id="toast" class="toast" role="alert" aria-live="assertive">
     <div class="toast-content">
-      <span class="toast-icon">✓</span>
+      <span id="toast-icon" class="toast-icon">✓</span>
       <span id="toast-message" class="toast-text">クリップボードにコピーしました</span>
     </div>
   </div>

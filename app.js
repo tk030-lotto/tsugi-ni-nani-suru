@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const refineButtons = document.querySelectorAll('.refine-btn');
 
   // Input Fields & Groups
+  const navigatorForm = document.getElementById('navigator-form');
   const groupStatus = document.getElementById('group-current-status');
   const inputStatus = document.getElementById('current-status');
   const inputGoal = document.getElementById('input-goal');
@@ -33,24 +34,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputTrouble = document.getElementById('input-trouble');
   const inputRemaining = document.getElementById('input-remaining');
 
-  // Output Elements
+  // Output Elements & Containers
+  const resultContainer = document.getElementById('result-container');
   const promptOutput = document.getElementById('prompt-output');
   const toast = document.getElementById('toast');
+  const toastIcon = document.getElementById('toast-icon');
   const toastMessage = document.getElementById('toast-message');
 
   // State
   let activeRefineType = null;
   let toastTimer = null;
 
+  // --- Form Submit Prevention (CSP compliant) ---
+  if (navigatorForm) {
+    navigatorForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+    });
+  }
+
   // --- LocalStorage Draft Persistence ---
   function saveDraft() {
     try {
       const data = {
-        status: inputStatus.value,
-        goal: inputGoal.value,
-        lastAction: inputLastAction.value,
-        trouble: inputTrouble.value,
-        remaining: inputRemaining.value,
+        status: inputStatus ? inputStatus.value : '',
+        goal: inputGoal ? inputGoal.value : '',
+        lastAction: inputLastAction ? inputLastAction.value : '',
+        trouble: inputTrouble ? inputTrouble.value : '',
+        remaining: inputRemaining ? inputRemaining.value : '',
         isAccordionOpen: accordionContent ? accordionContent.classList.contains('open') : false
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -64,11 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const data = JSON.parse(raw);
-      if (data.status) inputStatus.value = data.status;
-      if (data.goal) inputGoal.value = data.goal;
-      if (data.lastAction) inputLastAction.value = data.lastAction;
-      if (data.trouble) inputTrouble.value = data.trouble;
-      if (data.remaining) inputRemaining.value = data.remaining;
+      if (data.status && inputStatus) inputStatus.value = data.status;
+      if (data.goal && inputGoal) inputGoal.value = data.goal;
+      if (data.lastAction && inputLastAction) inputLastAction.value = data.lastAction;
+      if (data.trouble && inputTrouble) inputTrouble.value = data.trouble;
+      if (data.remaining && inputRemaining) inputRemaining.value = data.remaining;
       
       if (data.isAccordionOpen && accordionToggle && accordionContent) {
         accordionToggle.setAttribute('aria-expanded', 'true');
@@ -92,8 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       el.addEventListener('input', () => {
         saveDraft();
-        if (el === inputStatus && groupStatus) {
-          groupStatus.classList.remove('has-error');
+        if (el === inputStatus) {
+          if (groupStatus) groupStatus.classList.remove('has-error');
+          inputStatus.removeAttribute('aria-invalid');
         }
       });
     }
@@ -105,10 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- View Navigation ---
   function switchView(viewName) {
     Object.keys(views).forEach((key) => {
-      if (key === viewName) {
-        views[key].classList.add('active');
-      } else {
-        views[key].classList.remove('active');
+      const viewEl = views[key];
+      if (viewEl) {
+        if (key === viewName) {
+          viewEl.classList.add('active');
+        } else {
+          viewEl.classList.remove('active');
+        }
       }
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -118,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (accordionToggle && accordionContent) {
     accordionToggle.addEventListener('click', () => {
       const isExpanded = accordionToggle.getAttribute('aria-expanded') === 'true';
-      accordionToggle.setAttribute('aria-expanded', !isExpanded);
+      accordionToggle.setAttribute('aria-expanded', String(!isExpanded));
       accordionContent.classList.toggle('open', !isExpanded);
       saveDraft();
     });
@@ -128,19 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
   chipButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const chipText = btn.dataset.chip;
-      if (!chipText) return;
+      if (!chipText || !inputStatus) return;
 
       const currentVal = inputStatus.value.trim();
       if (!currentVal) {
         inputStatus.value = chipText;
       } else {
-        if (currentVal.endsWith('。') || currentVal.endsWith('\n')) {
+        if (currentVal.endsWith('。') || currentVal.endsWith('\n') || currentVal.endsWith('、')) {
           inputStatus.value = currentVal + chipText;
         } else {
           inputStatus.value = currentVal + '、' + chipText;
         }
       }
       if (groupStatus) groupStatus.classList.remove('has-error');
+      inputStatus.removeAttribute('aria-invalid');
       saveDraft();
       inputStatus.focus();
     });
@@ -148,18 +163,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Prompt Builder Engine ---
   function buildPrompt() {
-    const status = inputStatus.value.trim();
-    const goal = inputGoal.value.trim();
-    const lastAction = inputLastAction.value.trim();
-    const trouble = inputTrouble.value.trim();
-    const remaining = inputRemaining.value.trim();
+    const status = inputStatus ? inputStatus.value.trim() : '';
+    const goal = inputGoal ? inputGoal.value.trim() : '';
+    const lastAction = inputLastAction ? inputLastAction.value.trim() : '';
+    const trouble = inputTrouble ? inputTrouble.value.trim() : '';
+    const remaining = inputRemaining ? inputRemaining.value.trim() : '';
 
     if (!status) {
       if (groupStatus) {
         groupStatus.classList.add('has-error');
       }
+      if (inputStatus) {
+        inputStatus.setAttribute('aria-invalid', 'true');
+        inputStatus.focus();
+      }
       showToast('「今どこまでできていますか？」を入力してください。', true);
-      inputStatus.focus();
       return null;
     }
 
@@ -221,22 +239,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Clipboard Copy ---
   async function copyToClipboard(text) {
-    if (!text) return;
+    if (!text || !text.trim()) {
+      showToast('コピーする内容がありません。', true);
+      return;
+    }
+
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
+        showToast('質問文をクリップボードにコピーしました！');
       } else {
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
+        try {
+          textarea.focus();
+          textarea.select();
+          const ok = document.execCommand('copy');
+          if (!ok) throw new Error('execCommand returned false');
+          showToast('質問文をクリップボードにコピーしました！');
+        } finally {
+          if (textarea.parentNode) {
+            textarea.parentNode.removeChild(textarea);
+          }
+        }
       }
-      showToast('質問文をクリップボードにコピーしました！');
     } catch (err) {
       console.error('Clipboard copy failed:', err);
       showToast('コピーに失敗しました。直接選択してコピーしてください。', true);
@@ -250,8 +279,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isError) {
       toast.classList.add('toast-error');
+      if (toastIcon) toastIcon.textContent = '!';
     } else {
       toast.classList.remove('toast-error');
+      if (toastIcon) toastIcon.textContent = '✓';
     }
 
     toast.classList.add('show');
@@ -262,13 +293,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2800);
   }
 
+  // --- Paste Sanitization (Plain Text Only) ---
+  if (promptOutput) {
+    promptOutput.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+  }
+
   // --- Event Listeners ---
 
   // 1. 始めるボタン
   if (btnStart) {
     btnStart.addEventListener('click', () => {
       switchView('input');
-      setTimeout(() => inputStatus.focus(), 200);
+      setTimeout(() => {
+        if (inputStatus) inputStatus.focus();
+      }, 200);
     });
   }
 
@@ -278,21 +320,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const promptText = buildPrompt();
       if (!promptText) return;
 
-      promptOutput.innerText = promptText;
+      if (promptOutput) {
+        promptOutput.innerText = promptText;
+      }
       switchView('result');
+      setTimeout(() => {
+        if (resultContainer) {
+          resultContainer.focus();
+        }
+      }, 100);
     });
   }
 
   // 3. コピーボタン (ヘッダー & メイン) - 直接編集されたテキストを取得
   if (btnCopyHeader) {
     btnCopyHeader.addEventListener('click', () => {
-      const textToCopy = promptOutput.innerText || promptOutput.textContent;
+      const textToCopy = promptOutput ? (promptOutput.innerText || promptOutput.textContent) : '';
       copyToClipboard(textToCopy);
     });
   }
   if (btnCopyMain) {
     btnCopyMain.addEventListener('click', () => {
-      const textToCopy = promptOutput.innerText || promptOutput.textContent;
+      const textToCopy = promptOutput ? (promptOutput.innerText || promptOutput.textContent) : '';
       copyToClipboard(textToCopy);
     });
   }
@@ -312,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const updatedPrompt = buildPrompt();
-      if (updatedPrompt) {
+      if (updatedPrompt && promptOutput) {
         promptOutput.innerText = updatedPrompt;
         showToast('質問文を調整・更新しました');
       }
@@ -329,11 +378,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. リセットボタン
   if (btnReset) {
     btnReset.addEventListener('click', () => {
-      inputStatus.value = '';
-      inputGoal.value = '';
-      inputLastAction.value = '';
-      inputTrouble.value = '';
-      inputRemaining.value = '';
+      if (inputStatus) {
+        inputStatus.value = '';
+        inputStatus.removeAttribute('aria-invalid');
+      }
+      if (inputGoal) inputGoal.value = '';
+      if (inputLastAction) inputLastAction.value = '';
+      if (inputTrouble) inputTrouble.value = '';
+      if (inputRemaining) inputRemaining.value = '';
       activeRefineType = null;
       refineButtons.forEach((b) => b.classList.remove('active'));
       if (accordionContent) accordionContent.classList.remove('open');
@@ -342,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearDraft();
       showToast('入力内容をリセットしました');
       switchView('input');
-      inputStatus.focus();
+      if (inputStatus) inputStatus.focus();
     });
   }
 });
