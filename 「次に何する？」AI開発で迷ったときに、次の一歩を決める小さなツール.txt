@@ -1,5 +1,8 @@
 # 「次に何する？」AI開発で迷ったときに、次の一歩を決める小さなツール
 
+▼ ツールはこちら（ブラウザですぐに使えます・インストール不要）
+https://tk030-lotto.github.io/tsugi-ni-nani-suru/
+
 AIを使ってソフトウェアを作っていると、意外と困ることがあります。
 
 コードが書けないことではありません。
@@ -462,7 +465,7 @@ AIに全部やってもらうのではなく、
 
 ## 「次に何する？」を作りました
 
-GitHub Pagesで利用できる無料Webツールとして公開する予定です。
+GitHub Pagesで利用できる無料Webツールとして公開しています。
 
 インストールは必要ありません。
 
@@ -479,5 +482,11 @@ AIを使って開発していて、
 と聞けばいい。
 
 開発は、案外それくらいでも進んでいくのかもしれません。
+
+---
+
+### ツールURL・リポジトリ
+* **Webツール（GitHub Pages）**: https://tk030-lotto.github.io/tsugi-ni-nani-suru/
+* **GitHub リポジトリ**: https://github.com/tk030-lotto/tsugi-ni-nani-suru
 
 #AI開発 #生成AI #AI開発ツール #個人開発 #Webツール #GitHubPages #MCP #ソフトウェア開発 #開発効率化 #AI活用
