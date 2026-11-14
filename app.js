@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let activeRefineType = null;
   let toastTimer = null;
+  let lastGeneratedPrompt = null;
+  let pendingRefineType = null;
+  let resetConfirmPending = false;
 
   // --- Form Submit Prevention (CSP compliant) ---
   if (navigatorForm) {
@@ -86,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (e) {
       console.warn('LocalStorage load failed:', e);
+      clearDraft();
     }
   }
 
@@ -185,13 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
     prompt += `現在、個人開発（またはAI支援開発）を進めています。\n`;
     prompt += `今の進捗状況を入力しましたので、状況を整理した上で「次に行うべき具体的な作業」を教えてください。\n\n`;
 
-    prompt += `## 1. 現在の開発状況\n`;
+    let sectionNumber = 1;
+    prompt += `## ${sectionNumber++}. 現在の開発状況\n`;
     prompt += `${status}\n\n`;
 
     // 補足情報セクション（入力がある場合のみ）
     const hasDetails = goal || lastAction || trouble || remaining;
     if (hasDetails) {
-      prompt += `## 2. 補足情報\n`;
+      prompt += `## ${sectionNumber++}. 補足情報\n`;
       if (goal) prompt += `- 作りたいもの・目標: ${goal}\n`;
       if (lastAction) prompt += `- 直前に行った作業: ${lastAction}\n`;
       if (trouble) prompt += `- 現在困っていること・エラー: ${trouble}\n`;
@@ -200,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // AIへの指示・出力フォーマット
-    prompt += `## 3. AIへの依頼内容\n`;
+    prompt += `## ${sectionNumber++}. AIへの依頼内容\n`;
     prompt += `上記の内容を踏まえ、以下のフォーマットで回答してください。\n`;
     prompt += `一度に大量のタスクを提示せず、作業を小さく分割して **「まず最初に着手する1つの作業」** を最優先で明確に提示してください。\n\n`;
 
@@ -210,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
       prompt += `> 今後の全体計画は最小限にし、「今この瞬間に実行するべきたった1つの極小ステップ」だけを具体的に教えてください。\n\n`;
     } else if (activeRefineType === 'simple') {
       prompt += `> **【特に重視する点】**\n`;
-      prompt += `> 初心者でも迷わずできる、もっとも簡単で心理的ハードルの低い作業から順に提示してください。\n\n`;
+      prompt += `> 初心者でも迷わずできる、もっとも小さく始めやすい、心理的ハードルの低い作業から順に提示してください。\n\n`;
     } else if (activeRefineType === 'verify-only') {
       prompt += `> **【特に重視する点】**\n`;
       prompt += `> 新機能の追加は一旦行わず、現在動いている部分が正常に動作しているか確認する「動作検証・テスト手順」を教えてください。\n\n`;
@@ -232,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     prompt += `3. **作業完了後の確認方法**\n`;
     prompt += `   - 正常に動いたかどうかのチェック項目\n\n`;
     prompt += `4. **その後に続く予定のステップ（参考）**\n`;
-    prompt += `   - 次のステップ以降の簡単な目安`;
+    prompt += `   - 次のステップ以降のおおよその目安`;
 
     return prompt;
   }
@@ -293,12 +298,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2800);
   }
 
-  // --- Paste Sanitization (Plain Text Only) ---
+  // --- Paste Sanitization & Edit Tracking ---
   if (promptOutput) {
     promptOutput.addEventListener('paste', (e) => {
       e.preventDefault();
       const text = (e.clipboardData || window.clipboardData).getData('text/plain');
       document.execCommand('insertText', false, text);
+    });
+    promptOutput.addEventListener('input', () => {
+      pendingRefineType = null;
+      resetConfirmPending = false;
     });
   }
 
@@ -317,11 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. 質問文生成ボタン
   if (btnGenerate) {
     btnGenerate.addEventListener('click', () => {
+      pendingRefineType = null;
+      resetConfirmPending = false;
       const promptText = buildPrompt();
       if (!promptText) return;
 
       if (promptOutput) {
         promptOutput.innerText = promptText;
+        lastGeneratedPrompt = promptOutput.innerText || promptOutput.textContent;
       }
       switchView('result');
       setTimeout(() => {
@@ -335,12 +347,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. コピーボタン (ヘッダー & メイン) - 直接編集されたテキストを取得
   if (btnCopyHeader) {
     btnCopyHeader.addEventListener('click', () => {
+      pendingRefineType = null;
+      resetConfirmPending = false;
       const textToCopy = promptOutput ? (promptOutput.innerText || promptOutput.textContent) : '';
       copyToClipboard(textToCopy);
     });
   }
   if (btnCopyMain) {
     btnCopyMain.addEventListener('click', () => {
+      pendingRefineType = null;
+      resetConfirmPending = false;
       const textToCopy = promptOutput ? (promptOutput.innerText || promptOutput.textContent) : '';
       copyToClipboard(textToCopy);
     });
@@ -349,20 +365,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. クイック調整ボタン
   refineButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
+      resetConfirmPending = false;
       const refineType = btn.dataset.refine;
-      
+      const currentText = promptOutput ? (promptOutput.innerText || promptOutput.textContent) : '';
+      const isManuallyEdited = lastGeneratedPrompt !== null && currentText !== lastGeneratedPrompt;
+
+      if (isManuallyEdited && pendingRefineType !== refineType) {
+        pendingRefineType = refineType;
+        showToast('質問文が編集されています。再度押すと、編集内容を破棄して調整を反映します', true);
+        return;
+      }
+
+      pendingRefineType = null;
+
       if (activeRefineType === refineType) {
         activeRefineType = null;
         btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
       } else {
-        refineButtons.forEach((b) => b.classList.remove('active'));
+        refineButtons.forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
         activeRefineType = refineType;
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
       }
 
       const updatedPrompt = buildPrompt();
       if (updatedPrompt && promptOutput) {
         promptOutput.innerText = updatedPrompt;
+        lastGeneratedPrompt = promptOutput.innerText || promptOutput.textContent;
         showToast('質問文を調整・更新しました');
       }
     });
@@ -371,6 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. 入力修正ボタン
   if (btnEdit) {
     btnEdit.addEventListener('click', () => {
+      pendingRefineType = null;
+      resetConfirmPending = false;
       switchView('input');
     });
   }
@@ -378,6 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. リセットボタン
   if (btnReset) {
     btnReset.addEventListener('click', () => {
+      pendingRefineType = null;
+      if (!resetConfirmPending) {
+        resetConfirmPending = true;
+        showToast('入力内容と下書きがすべて消えます。再度押すとリセットします', true);
+        return;
+      }
+
+      resetConfirmPending = false;
       if (inputStatus) {
         inputStatus.value = '';
         inputStatus.removeAttribute('aria-invalid');
@@ -386,8 +429,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (inputLastAction) inputLastAction.value = '';
       if (inputTrouble) inputTrouble.value = '';
       if (inputRemaining) inputRemaining.value = '';
+      if (promptOutput) {
+        promptOutput.innerText = '';
+      }
+      lastGeneratedPrompt = null;
       activeRefineType = null;
-      refineButtons.forEach((b) => b.classList.remove('active'));
+      refineButtons.forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       if (accordionContent) accordionContent.classList.remove('open');
       if (accordionToggle) accordionToggle.setAttribute('aria-expanded', 'false');
       if (groupStatus) groupStatus.classList.remove('has-error');

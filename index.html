@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AI開発中の「今どこまで進んだか」「次に何をすればいいか」を整理し、AIへ投げる最適な質問文（プロンプト）を生成するWebツール">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="次に何する？ | AI開発ナビゲーター">
+  <meta property="og:description" content="AI開発中の「今どこまで進んだか」「次に何をすればいいか」を整理し、AIへ投げる最適な質問文（プロンプト）を生成するWebツール">
+  <meta property="og:url" content="https://tk030-lotto.github.io/tsugi-ni-nani-suru/">
+  <meta name="twitter:card" content="summary">
   <title>次に何する？ | AI開発ナビゲーター</title>
   <!-- Favicon (Compass Emoji SVG) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -35,7 +37,7 @@
         </div>
         <button id="btn-start" class="btn btn-primary btn-large">
           <span>始める</span>
-          <svg class="btn-arrow" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -111,10 +113,10 @@
         </div>
 
         <!-- 送信ボタン -->
-        <div class="form-actions">
+        <div>
           <button type="button" id="btn-generate" class="btn btn-primary btn-large">
             <span>AIへの質問文を作る</span>
-            <svg class="btn-sparkle" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
             </svg>
           </button>
@@ -149,7 +151,7 @@
         </div>
 
         <!-- メインアクション：コピーボタン -->
-        <div class="result-actions">
+        <div>
           <button type="button" id="btn-copy-main" class="btn btn-copy-main btn-large">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -163,11 +165,11 @@
         <div class="refine-section">
           <div class="refine-title">⚡ 質問のトーン・方針を調整する：</div>
           <div class="refine-chips">
-            <button type="button" class="refine-btn" data-refine="next-one">🎯 次の1個だけに絞って</button>
-            <button type="button" class="refine-btn" data-refine="simple">🐣 もっと簡単な作業から</button>
-            <button type="button" class="refine-btn" data-refine="verify-only">🔍 まず動作確認だけしたい</button>
-            <button type="button" class="refine-btn" data-refine="postpone">⏳ 複雑な機能は後回し</button>
-            <button type="button" class="refine-btn" data-refine="overview">📋 全体のロードマップも知りたい</button>
+            <button type="button" class="refine-btn" data-refine="next-one" aria-pressed="false">🎯 次の1個だけに絞って</button>
+            <button type="button" class="refine-btn" data-refine="simple" aria-pressed="false">🐣 もっと小さい作業から</button>
+            <button type="button" class="refine-btn" data-refine="verify-only" aria-pressed="false">🔍 まず動作確認だけしたい</button>
+            <button type="button" class="refine-btn" data-refine="postpone" aria-pressed="false">⏳ 複雑な機能は後回し</button>
+            <button type="button" class="refine-btn" data-refine="overview" aria-pressed="false">📋 全体のロードマップも知りたい</button>
           </div>
         </div>
 

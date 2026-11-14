@@ -46,3 +46,8 @@ CODE_REVIEW_REPORT*.md
 
 # 仕様書除外（フェーズ2-C-β）
 仕様書*.md
+
+# 内部規則・レビュー文書除外
+CORE-RULES.md
+UI-STANDARD.md
+PRIMARY-REVIEW-*
