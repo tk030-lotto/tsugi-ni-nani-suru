@@ -51,3 +51,4 @@ CODE_REVIEW_REPORT*.md
 CORE-RULES.md
 UI-STANDARD.md
 PRIMARY-REVIEW-*
+.playwright-mcp/
